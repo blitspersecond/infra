@@ -19,10 +19,11 @@ resource "aws_internet_gateway" "internet_gateway" {
 }
 
 resource "aws_subnet" "public_subnet" {
-  for_each          = var.availability_zones
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key)
-  availability_zone = each.value
+  for_each                = var.availability_zones
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key)
+  availability_zone       = each.value
+  map_public_ip_on_launch = true
   tags = merge(
     var.tags,
     {

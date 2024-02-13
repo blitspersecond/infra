@@ -1,9 +1,5 @@
 data "aws_region" "current" {}
 
-module "tags" {
-  source = "../../../var/modules/tags"
-}
-
 module "hub-vpc" {
   source     = "../../../var/modules/vpc"
   vpc_name   = "${data.aws_region.current.id}-hub-vpc"

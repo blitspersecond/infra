@@ -1,1 +1,1 @@
-/home/kris/code/smkd/etc/provider.eu-west-1.tf
+/home/kris/code/smkd/infra/etc/provider.eu-west-1.tf

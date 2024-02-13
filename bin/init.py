@@ -23,7 +23,7 @@ path = "/".join([basepath, args.path])
 
 
 if os.path.exists(etc) and os.path.exists(path):
-    # symlink the provider file in etc to the path
+    # symlink the provider file in etc to the path, FIXME: use relative path
     provider = ".".join(["provider", args.region, "tf"])
     provider = "/".join([etc, provider])
     try:
@@ -40,6 +40,7 @@ if os.path.exists(etc) and os.path.exists(path):
     os.system("rm -rf {}".format(lock))
 
     backend_key = "/".join([args.path, "terraform.tfstate"])
+    backend_key = backend_key.replace("//", "/")
     backend_bucket = "-".join(["terraform-state", args.region, args.account])
 
     # run terraform init from the path
@@ -51,4 +52,5 @@ if os.path.exists(etc) and os.path.exists(path):
         f"-backend-config=bucket={backend_bucket}",
         f"-backend-config=region={args.region}",
     ]
+    print(" ".join(tf_init))
     proc = subprocess.run(tf_init)
