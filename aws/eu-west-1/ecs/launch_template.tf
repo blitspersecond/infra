@@ -1,24 +1,54 @@
-output "ecs-ami-id" {
-  value = data.aws_ami.ecs.id
+resource "tls_private_key" "pk" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
-
-# https://www.teracloud.io/single-post/optimize-your-costs-with-aws-spot-instances-and-terraform-in-just-a-few-steps
 
 resource "aws_launch_template" "ecs_cluster_nodes" {
   name     = "${var.environment}-ecs-cluster-node"
   image_id = data.aws_ami.ecs.id
-  # iam_instance_profile        = { name = "${aws_iam_instance_profile.eks-cluster-worker-nodes.name}" }
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_profile.name
+  }
   vpc_security_group_ids = [
     aws_security_group.ecs.id
   ]
-  # key_name                    = "${var.ssh-key-name}"
+  instance_type = "t2.micro"
   # instance_type               = "${local.host-types[0]}"
-  # user_data                   = "${base64encode(element(data.template_file.userdata.*.rendered, count.index))}"
+  user_data = filebase64("init.sh")
   monitoring {
     enabled = false
   }
   lifecycle {
     create_before_destroy = true
+  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-ecs-cluster-node"
+    }
+  )
+  update_default_version = true
+}
+
+resource "aws_autoscaling_group" "ecs_cluster_nodes" {
+  desired_capacity    = 0
+  max_size            = 1
+  min_size            = 0
+  name                = "${var.environment}-ecs-cluster-node"
+  vpc_zone_identifier = data.aws_subnets.spoke.ids
+  launch_template {
+    id      = aws_launch_template.ecs_cluster_nodes.id
+    version = "$Latest"
+  }
+  tag {
+    key                 = "Name"
+    value               = "${var.environment}-ecs-cluster-node"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "Environment"
+    value               = var.environment
+    propagate_at_launch = true
   }
 }
 

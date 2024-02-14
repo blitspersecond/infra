@@ -28,6 +28,7 @@ resource "aws_subnet" "public_subnet" {
     var.tags,
     {
       Name = "${var.vpc_name}-${each.value}-public-subnet"
+      Type = "public"
     }
   )
 }
@@ -62,6 +63,7 @@ resource "aws_subnet" "private_subnet" {
     var.tags,
     {
       Name = "${var.vpc_name}-${each.value}-private-subnet"
+      Type = "private"
     }
   )
 }
@@ -75,6 +77,7 @@ resource "aws_subnet" "isolated_subnet" {
     var.tags,
     {
       Name = "${var.vpc_name}-${each.value}-isolated-subnet"
+      Type = "isolated"
     }
   )
 }
