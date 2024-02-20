@@ -24,6 +24,9 @@ resource "aws_launch_template" "ecs_cluster_nodes" {
   monitoring {
     enabled = false
   }
+  metadata_options {
+    http_tokens = "required"
+  }
   lifecycle {
     create_before_destroy = true
   }
