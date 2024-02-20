@@ -1,3 +1,10 @@
+locals {
+  host-types = [
+    "t3.micro", # $0.0104 per hour
+    "t2.micro", # $0.0136 per hour
+  ]
+}
+
 resource "tls_private_key" "pk" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -13,8 +20,7 @@ resource "aws_launch_template" "ecs_cluster_nodes" {
     aws_security_group.ecs.id
   ]
   instance_type = "t2.micro"
-  # instance_type               = "${local.host-types[0]}"
-  user_data = filebase64("init.sh")
+  user_data     = base64encode(templatefile("init.sh", { environment = var.environment }))
   monitoring {
     enabled = false
   }
@@ -31,14 +37,29 @@ resource "aws_launch_template" "ecs_cluster_nodes" {
 }
 
 resource "aws_autoscaling_group" "ecs_cluster_nodes" {
-  desired_capacity    = 0
+  desired_capacity    = 1
   max_size            = 1
   min_size            = 0
   name                = "${var.environment}-ecs-cluster-node"
   vpc_zone_identifier = data.aws_subnets.spoke.ids
-  launch_template {
-    id      = aws_launch_template.ecs_cluster_nodes.id
-    version = "$Latest"
+  mixed_instances_policy {
+    instances_distribution {
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = 0
+      spot_allocation_strategy                 = "price-capacity-optimized"
+    }
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.ecs_cluster_nodes.id
+        version            = "$Latest"
+      }
+      override {
+        instance_type = local.host-types[0]
+      }
+      override {
+        instance_type = local.host-types[1]
+      }
+    }
   }
   tag {
     key                 = "Name"
@@ -51,57 +72,3 @@ resource "aws_autoscaling_group" "ecs_cluster_nodes" {
     propagate_at_launch = true
   }
 }
-
-# resource "aws_autoscaling_group" "eks-cluster-worker-nodes-spot" {
-#   count                = "${var.enable-spot == "true" ? 1 : 0}"
-#   max_size             = "${var.max-host-count}"
-#   min_size             = "${var.min-host-count}"
-#   name                 = "${var.cluster-name}"
-#   vpc_zone_identifier  = "${local.subnet-ids}"
-
-#   mixed_instances_policy {
-#     instances_distribution {
-#       on_demand_percentage_above_base_capacity = 0
-#       spot_instance_pools = 2
-#     }
-#     launch_template {
-#       launch_template_specification {
-#         launch_template_id = "${aws_launch_template.eks-cluster-worker-nodes.id}"
-#         version = "$$Latest"
-#       }
-
-#       override {
-#         instance_type = "${local.host-types[0]}"
-#       }
-
-#       override {
-#         instance_type = "${local.host-types[1]}"
-#       }
-#     }
-#   }
-
-#   tag {
-#     key                 = "Name"
-#     value               = "${var.cluster-name}"
-#     propagate_at_launch = true
-#   }
-
-#   tag {
-#     key                 = "Environment"
-#     value               = "${var.cluster-name}"
-#     propagate_at_launch = true
-#   }
-
-#   tag {
-#     key                 = "kubernetes.io/cluster/${var.cluster-name}"
-#     value               = "owned"
-#     propagate_at_launch = true
-#   }
-
-#   tag {
-#     key                 = "k8s.io/cluster-autoscaler/enabled"
-#     value               = "true"
-#     propagate_at_launch = true
-#   }
-
-# }
