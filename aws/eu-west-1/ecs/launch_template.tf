@@ -44,7 +44,7 @@ resource "aws_autoscaling_group" "ecs_cluster_nodes" {
   max_size            = 1
   min_size            = 0
   name                = "${var.environment}-ecs-cluster-node"
-  vpc_zone_identifier = data.aws_subnets.spoke.ids
+  vpc_zone_identifier = data.aws_subnets.spoke_public.ids
   mixed_instances_policy {
     instances_distribution {
       on_demand_base_capacity                  = 0

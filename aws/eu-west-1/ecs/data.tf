@@ -24,7 +24,7 @@ data "aws_vpc" "hub" {
     values = ["${data.aws_region.current.id}-hub-vpc"]
   }
 }
-data "aws_subnets" "spoke" {
+data "aws_subnets" "spoke_public" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.spoke.id]
@@ -32,5 +32,16 @@ data "aws_subnets" "spoke" {
   filter {
     name   = "tag:Type"
     values = ["public"]
+  }
+}
+
+data "aws_subnets" "spoke_private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.spoke.id]
+  }
+  filter {
+    name   = "tag:Type"
+    values = ["private"]
   }
 }
