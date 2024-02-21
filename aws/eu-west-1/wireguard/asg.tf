@@ -37,7 +37,7 @@ resource "aws_launch_template" "wireguard" {
 }
 
 resource "aws_autoscaling_group" "wireguard" {
-  desired_capacity    = 1
+  desired_capacity    = 0
   max_size            = 1
   min_size            = 0
   name                = "${var.environment}-wireguard"
