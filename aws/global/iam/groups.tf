@@ -5,9 +5,10 @@ resource "aws_identitystore_group" "users" {
 }
 
 resource "aws_ssoadmin_permission_set" "users" {
-  instance_arn = tolist(data.aws_ssoadmin_instances.ssoadmin_instances.arns)[0]
-  name         = "users"
-  description  = "Users Permission Set"
+  instance_arn     = tolist(data.aws_ssoadmin_instances.ssoadmin_instances.arns)[0]
+  name             = "users"
+  description      = "Users Permission Set"
+  session_duration = "PT8H"
 }
 
 resource "aws_ssoadmin_managed_policy_attachment" "users" {
@@ -34,9 +35,10 @@ resource "aws_identitystore_group" "admins" {
 }
 
 resource "aws_ssoadmin_permission_set" "admins" {
-  instance_arn = tolist(data.aws_ssoadmin_instances.ssoadmin_instances.arns)[0]
-  name         = "admins"
-  description  = "Admins Permission Set"
+  instance_arn     = tolist(data.aws_ssoadmin_instances.ssoadmin_instances.arns)[0]
+  name             = "admins"
+  description      = "Admins Permission Set"
+  session_duration = "PT8H"
 }
 
 resource "aws_ssoadmin_managed_policy_attachment" "admins" {
