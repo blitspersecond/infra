@@ -9,9 +9,12 @@ module "hub-vpc" {
     1 = "${data.aws_region.current.id}b"
     2 = "${data.aws_region.current.id}c"
   }
-  tags = {
-    (module.tags.MANAGED_BY) = module.tags.TERRAFORM
-  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-vpc"
+    }
+  )
 }
 
 module "production-vpc" {
@@ -23,7 +26,12 @@ module "production-vpc" {
     1 = "${data.aws_region.current.id}b"
     2 = "${data.aws_region.current.id}c"
   }
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-vpc"
+    }
+  )
 }
 
 resource "aws_vpc_peering_connection" "hub-to-eu-west-1-production" {
