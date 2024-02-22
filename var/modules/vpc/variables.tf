@@ -20,3 +20,8 @@ variable "tags" {
 variable "availability_zones" {
   type = map(string)
 }
+
+variable "nat_gateway" {
+  type    = bool
+  default = false
+}

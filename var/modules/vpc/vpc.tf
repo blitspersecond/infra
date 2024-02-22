@@ -18,6 +18,35 @@ resource "aws_internet_gateway" "internet_gateway" {
   )
 }
 
+resource "aws_eip" "nat_gateway" {
+  for_each = var.nat_gateway ? aws_subnet.public_subnet : tomap({})
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.vpc_name}-${each.value}-nat-eip"
+    }
+  )
+}
+
+resource "aws_nat_gateway" "nat_gateway" {
+  for_each = var.nat_gateway ? aws_subnet.public_subnet : tomap({})
+  # allocation_id = aws_eip.nat_gateway.nat_eip[each.key]
+  allocation_id = aws_eip.nat_gateway[each.key].id
+  subnet_id     = each.value.id
+}
+
+# resource "aws_nat_gateway" "nat_gateway" {
+#   for_each      = var.availability_zones
+#   allocation_id = aws_eip.nat_gateway.nat_eip[each.key].id
+#   subnet_id     = aws_subnet.public_subnet[each.key].id
+#   tags = merge(
+#     var.tags,
+#     {
+#       Name = "${var.vpc_name}-${each.value}-nat-gateway"
+#     }
+#   )
+# }
+
 resource "aws_subnet" "public_subnet" {
   for_each                = var.availability_zones
   vpc_id                  = aws_vpc.vpc.id
