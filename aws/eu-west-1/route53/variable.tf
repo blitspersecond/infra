@@ -1,10 +1,15 @@
-variable domain {
+variable "domain" {
   type        = string
   default     = ""
   description = "domain name"
 }
-variable environment {
+variable "environment" {
   type        = string
   default     = ""
   description = "environment name"
+}
+variable "domain" {
+  type        = string
+  default     = ""
+  description = "domain name"
 }

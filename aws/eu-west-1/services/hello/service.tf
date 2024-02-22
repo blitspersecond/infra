@@ -3,28 +3,28 @@ data "aws_ecs_cluster" "ecs_cluster" {
 }
 
 resource "aws_ecs_task_definition" "hello_task_definition" {
-  family       = "hello-a"
+  family       = "hello-service"
   network_mode = "bridge"
   container_definitions = jsonencode([
     {
       name      = "hello"
       image     = "${aws_ecr_repository.hello.repository_url}:latest"
       cpu       = 256
-      memory    = 512
+      memory    = 128
       essential = true
       portMappings = [
         {
           containerPort = 5000
         }
       ]
-      #   logConfiguration = {
-      #     logDriver = "awslogs"
-      #     options = {
-      #       "awslogs-group"         = "hello-service"
-      #       "awslogs-region"        = "eu-west-1"
-      #       "awslogs-stream-prefix" = "hello"
-      #     }
-      #   }
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"        = "/aws/${var.environment}/hello-service",
+          "awslogs-region"       = "eu-west-1",
+          "awslogs-create-group" = "true",
+        }
+      }
     }
   ])
 }

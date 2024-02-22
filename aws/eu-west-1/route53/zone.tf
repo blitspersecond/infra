@@ -10,6 +10,3 @@ resource "aws_route53_record" "region_ns" {
   records = aws_route53_zone.region.name_servers
 }
 
-output "region_ns" {
-  value = aws_route53_record.region_ns
-}
