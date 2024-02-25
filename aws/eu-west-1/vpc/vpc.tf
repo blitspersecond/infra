@@ -26,6 +26,7 @@ module "production-vpc" {
     1 = "${data.aws_region.current.id}b"
     2 = "${data.aws_region.current.id}c"
   }
+  nat_gateway = true
   tags = merge(
     local.tags,
     {
@@ -60,4 +61,16 @@ resource "aws_route" "eu-west-1-production-to-hub" {
   route_table_id            = module.production-vpc.default_route_table_id
   destination_cidr_block    = module.hub-vpc.cidr_block
   vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-production.id
+}
+
+module "fck-nat" {
+  source = "../../../var/modules/fck-nat"
+  vpc_id = module.production-vpc.vpc_id
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-nat"
+    }
+  )
+  environment = var.environment
 }
