@@ -3,10 +3,11 @@ data "aws_availability_zones" "available" {}
 
 data "aws_ami" "fck_nat" {
   most_recent = true
-  owners      = ["568608671756"]
+  owners      = ["amazon"]
+
   filter {
     name   = "name"
-    values = ["fck-nat-al2023-*-arm64-ebs"]
+    values = ["al2023-ami-2023*-kernel-*-arm64"]
   }
 }
 

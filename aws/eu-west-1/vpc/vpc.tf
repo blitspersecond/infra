@@ -48,7 +48,13 @@ resource "aws_vpc_peering_connection" "hub-to-eu-west-1-production" {
 
 resource "aws_vpc_peering_connection_accepter" "hub-to-eu-west-1-production" {
   vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-production.id
-  auto_accept               = true
+  auto_accept               = true #
+  tags = merge(
+    local.tags,
+    {
+      Name = "${data.aws_region.current.id}-hub-to-${var.environment}"
+    }
+  )
 }
 
 resource "aws_route" "hub-to-eu-west-1-production" {
