@@ -1,5 +1,3 @@
-
-
 variable "vpc_name" {
   type    = string
   default = "undefined"
@@ -21,7 +19,12 @@ variable "availability_zones" {
   type = map(string)
 }
 
-variable "nat_gateway" {
+variable "fck_nat" {
   type    = bool
   default = false
+}
+
+variable "environment" {
+  type    = string
+  default = "undefined"
 }

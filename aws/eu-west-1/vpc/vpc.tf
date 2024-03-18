@@ -1,9 +1,11 @@
 data "aws_region" "current" {}
 
 module "hub-vpc" {
-  source     = "../../../var/modules/vpc"
-  vpc_name   = "${data.aws_region.current.id}-hub-vpc"
-  cidr_block = "10.0.0.0/20"
+  source      = "../../../var/modules/vpc"
+  vpc_name    = "${data.aws_region.current.id}-hub-vpc"
+  cidr_block  = "10.0.0.0/20"
+  fck_nat     = false
+  environment = "hub"
   availability_zones = {
     0 = "${data.aws_region.current.id}a"
     1 = "${data.aws_region.current.id}b"
@@ -17,16 +19,17 @@ module "hub-vpc" {
   )
 }
 
-module "production-vpc" {
-  source     = "../../../var/modules/vpc"
-  vpc_name   = "${data.aws_region.current.id}-${var.environment}-vpc"
-  cidr_block = "10.0.16.0/20"
+module "live-vpc" {
+  source      = "../../../var/modules/vpc"
+  vpc_name    = "${data.aws_region.current.id}-${var.environment}-vpc"
+  cidr_block  = "10.0.16.0/20"
+  fck_nat     = true
+  environment = "live"
   availability_zones = {
     0 = "${data.aws_region.current.id}a"
     1 = "${data.aws_region.current.id}b"
     2 = "${data.aws_region.current.id}c"
   }
-  nat_gateway = true
   tags = merge(
     local.tags,
     {
@@ -35,8 +38,8 @@ module "production-vpc" {
   )
 }
 
-resource "aws_vpc_peering_connection" "hub-to-eu-west-1-production" {
-  peer_vpc_id = module.production-vpc.vpc_id
+resource "aws_vpc_peering_connection" "hub-to-eu-west-1-live" {
+  peer_vpc_id = module.live-vpc.vpc_id
   vpc_id      = module.hub-vpc.vpc_id
   tags = merge(
     local.tags,
@@ -46,8 +49,8 @@ resource "aws_vpc_peering_connection" "hub-to-eu-west-1-production" {
   )
 }
 
-resource "aws_vpc_peering_connection_accepter" "hub-to-eu-west-1-production" {
-  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-production.id
+resource "aws_vpc_peering_connection_accepter" "hub-to-eu-west-1-live" {
+  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-live.id
   auto_accept               = true #
   tags = merge(
     local.tags,
@@ -57,26 +60,32 @@ resource "aws_vpc_peering_connection_accepter" "hub-to-eu-west-1-production" {
   )
 }
 
-resource "aws_route" "hub-to-eu-west-1-production" {
+resource "aws_route" "hub-to-eu-west-1-live" {
   route_table_id            = module.hub-vpc.default_route_table_id
-  destination_cidr_block    = module.production-vpc.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-production.id
+  destination_cidr_block    = module.live-vpc.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-live.id
 }
 
-resource "aws_route" "eu-west-1-production-to-hub" {
-  route_table_id            = module.production-vpc.default_route_table_id
+resource "aws_route" "eu-west-1-live-to-hub" {
+  route_table_id            = module.live-vpc.default_route_table_id
   destination_cidr_block    = module.hub-vpc.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-production.id
+  vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-live.id
 }
 
-module "fck-nat" {
-  source = "../../../var/modules/fck-nat"
-  vpc_id = module.production-vpc.vpc_id
-  tags = merge(
-    local.tags,
-    {
-      Name = "${var.environment}-nat"
-    }
-  )
-  environment = var.environment
-}
+
+
+# module "fck-nat" {
+
+# }
+
+# module "fck-nat" {
+#   source = "../../../var/modules/fck-nat"
+#   vpc_id = module.live-vpc.vpc_id
+#   tags = merge(
+#     local.tags,
+#     {
+#       Name = "${var.environment}-nat"
+#     }
+#   )
+#   environment = var.environment
+# }
