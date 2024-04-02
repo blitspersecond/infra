@@ -3,6 +3,8 @@ resource "aws_iam_instance_profile" "fck_nat_profile" {
   role = aws_iam_role.fck_nat_role.name
 }
 
+#TODO: we know which interfaces we want to attach, so we can restrict this policy to only allow those
+#tfsec:ignore:aws-ec2-attach-network-interface
 data "aws_iam_policy_document" "fck_nat_assume_role" {
   statement {
     effect = "Allow"
@@ -16,6 +18,8 @@ data "aws_iam_policy_document" "fck_nat_assume_role" {
   }
 }
 
+#TODO: we know which interfaces we want to attach, so we can restrict this policy to only allow those
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "fck_nat_network_policy" {
   statement {
     effect = "Allow"

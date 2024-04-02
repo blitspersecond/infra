@@ -1,3 +1,4 @@
+#tfsec:ignore:aws-ec2-require-vpc-flow-logs-for-all-vpcs TODO: flow logs are expensive and not required for all VPCs
 resource "aws_vpc" "vpc" {
   cidr_block = var.cidr_block
   tags = merge(
@@ -9,7 +10,8 @@ resource "aws_vpc" "vpc" {
 }
 
 resource "aws_security_group" "fck_nat_security_group" {
-  vpc_id = aws_vpc.vpc.id
+  description = "fck-nat-security-group"
+  vpc_id      = aws_vpc.vpc.id
   tags = merge(
     var.tags,
     {
@@ -27,13 +29,12 @@ resource "aws_internet_gateway" "internet_gateway" {
     }
   )
 }
-
 resource "aws_subnet" "public_subnet" {
   for_each                = var.availability_zones
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key)
   availability_zone       = each.value
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   tags = merge(
     var.tags,
     {
