@@ -40,8 +40,8 @@ resource "aws_launch_template" "ecs_cluster_nodes" {
 }
 
 resource "aws_autoscaling_group" "ecs_cluster_nodes" {
-  desired_capacity    = 1
-  max_size            = 1
+  desired_capacity    = 2
+  max_size            = 3
   min_size            = 0
   name                = "${var.environment}-ecs-cluster-node"
   vpc_zone_identifier = data.aws_subnets.spoke_public.ids

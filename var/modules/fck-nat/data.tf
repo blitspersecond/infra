@@ -57,4 +57,5 @@ data "aws_subnet" "vpc_private" {
 
 locals {
   vpc_private_ids = values(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
+  vpc_private_azs = keys(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
 }

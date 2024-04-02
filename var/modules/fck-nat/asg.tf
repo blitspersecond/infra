@@ -11,7 +11,7 @@ resource "aws_eip" "fck_nat_eip" {
 
 resource "aws_network_interface" "fck_nat" {
   for_each          = var.availability_zones
-  description       = "fck-nat-lt-${each.value} static private ENI"
+  description       = "fck-nat-lt static private ENI"
   subnet_id         = local.vpc_private_ids[each.key]
   security_groups   = [aws_security_group.fck_nat_sg.id]
   source_dest_check = false
@@ -30,7 +30,7 @@ resource "aws_launch_template" "fck_nat_lt" {
     name = aws_iam_instance_profile.fck_nat_profile.name
   }
   network_interfaces {
-    description                 = "fck-nat-lt-${each.value} ephemeral public ENI"
+    description                 = "fck-nat-lt ephemeral public ENI"
     subnet_id                   = local.vpc_public_ids[each.key]
     associate_public_ip_address = true
     security_groups             = [aws_security_group.fck_nat_sg.id]
@@ -56,7 +56,7 @@ resource "aws_launch_template" "fck_nat_lt" {
 
 resource "aws_autoscaling_group" "fck_nat_asg" {
   for_each            = var.availability_zones
-  name                = "fck-nat-asg-${each.value}"
+  name                = "fck-nat-asg-${uuid()}"
   max_size            = 1
   min_size            = 1
   desired_capacity    = 1
