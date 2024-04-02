@@ -1,18 +1,18 @@
 resource "aws_eip" "fck_nat_eip" {
-  for_each = var.fck_nat == true ? var.availability_zones : {}
+  for_each = local.vpc_private_ids
   domain   = "vpc"
   tags = merge(
     var.tags,
     {
-      Name = "${var.vpc_name}-${each.value}-fck-nat-eip"
+      Name = "${var.environment}-fck-nat-eip"
     }
   )
 }
 
 resource "aws_network_interface" "fck_nat" {
-  for_each          = var.fck_nat == true ? var.availability_zones : {}
-  description       = "fck-nat-lt-${each.value} static private ENI"
-  subnet_id         = aws_subnet.public_subnet[each.key].id
+  for_each          = local.vpc_private_ids
+  description       = "fck-nat-lt static private ENI"
+  subnet_id         = local.vpc_private_ids[each.key]
   security_groups   = [aws_security_group.fck_nat_sg.id]
   source_dest_check = false
 
@@ -22,7 +22,7 @@ resource "aws_network_interface" "fck_nat" {
 }
 
 resource "aws_launch_template" "fck_nat_lt" {
-  for_each      = var.fck_nat == true ? var.availability_zones : {}
+  for_each      = var.availability_zones
   name          = "fck-nat-lt-${each.value}"
   image_id      = data.aws_ami.fck_nat.id
   instance_type = local.host-types[0]
@@ -30,8 +30,8 @@ resource "aws_launch_template" "fck_nat_lt" {
     name = aws_iam_instance_profile.fck_nat_profile.name
   }
   network_interfaces {
-    description                 = "fck-nat-lt-${each.value} ephemeral public ENI"
-    subnet_id                   = aws_subnet.public_subnet[each.key].id
+    description                 = "fck-nat-lt ephemeral public ENI"
+    subnet_id                   = local.vpc_public_ids[each.key]
     associate_public_ip_address = true
     security_groups             = [aws_security_group.fck_nat_sg.id]
   }
@@ -51,16 +51,17 @@ resource "aws_launch_template" "fck_nat_lt" {
     http_endpoint = "enabled"
     http_tokens   = "required"
   }
+  update_default_version = true
 }
 
 resource "aws_autoscaling_group" "fck_nat_asg" {
-  for_each            = var.fck_nat == true ? var.availability_zones : {}
+  for_each            = var.availability_zones
   name                = "fck-nat-asg-${each.value}"
   max_size            = 1
   min_size            = 1
   desired_capacity    = 1
   health_check_type   = "EC2"
-  vpc_zone_identifier = [aws_subnet.public_subnet[each.key].id]
+  vpc_zone_identifier = [data.aws_subnets.vpc_public.ids[each.key]]
 
   launch_template {
     id      = aws_launch_template.fck_nat_lt[each.key].id

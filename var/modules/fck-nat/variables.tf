@@ -14,3 +14,7 @@ variable "environment" {
   type    = string
   default = "undefined"
 }
+
+variable "availability_zones" {
+  type = map(string)
+}

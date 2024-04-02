@@ -1,7 +1,7 @@
 resource "aws_security_group" "fck_nat_sg" {
   name        = "fck_nat_sg"
   description = "Allow outbound traffic from the NAT Gateway"
-  vpc_id      = aws_vpc.vpc.id
+  vpc_id      = var.vpc_id
   egress {
     from_port   = 0
     to_port     = 0

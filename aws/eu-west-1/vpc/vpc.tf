@@ -38,6 +38,23 @@ module "live-vpc" {
   )
 }
 
+module "live-fk-nat" {
+  source = "../../../var/modules/fck-nat"
+  vpc_id = module.live-vpc.vpc_id
+  availability_zones = {
+    0 = "${data.aws_region.current.id}a"
+    1 = "${data.aws_region.current.id}b"
+    2 = "${data.aws_region.current.id}c"
+  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-nat"
+    }
+  )
+  environment = var.environment
+}
+
 resource "aws_vpc_peering_connection" "hub-to-eu-west-1-live" {
   peer_vpc_id = module.live-vpc.vpc_id
   vpc_id      = module.hub-vpc.vpc_id
