@@ -41,11 +41,6 @@ module "live-vpc" {
 module "live-fk-nat" {
   source = "../../../var/modules/fck-nat"
   vpc_id = module.live-vpc.vpc_id
-  availability_zones = {
-    0 = "${data.aws_region.current.id}a"
-    1 = "${data.aws_region.current.id}b"
-    2 = "${data.aws_region.current.id}c"
-  }
   tags = merge(
     local.tags,
     {
@@ -53,6 +48,29 @@ module "live-fk-nat" {
     }
   )
   environment = var.environment
+}
+
+
+data "aws_subnets" "vpc_public" {
+  filter {
+    name   = "vpc-id"
+    values = [module.live-vpc.vpc_id]
+  }
+  filter {
+    name   = "tag:Type"
+    values = ["public"]
+  }
+}
+
+data "aws_subnet" "vpc_public" {
+  for_each = toset(data.aws_subnets.vpc_public.ids)
+  id       = each.key
+}
+
+output "subnet_ids" {
+  value = {
+    for az in data.aws_subnet.vpc_public : az.availability_zone => az.id
+  }
 }
 
 resource "aws_vpc_peering_connection" "hub-to-eu-west-1-live" {
@@ -89,7 +107,18 @@ resource "aws_route" "eu-west-1-live-to-hub" {
   vpc_peering_connection_id = aws_vpc_peering_connection.hub-to-eu-west-1-live.id
 }
 
+# output "az" {
+#   value = module.live-fk-nat.public_azs
+# }
 
+# # The given "for_each" argument value is unsuitable: the "for_each" argument must be a map, or set of strings, and you have provided a value of type tuple.
+
+
+# output "local_fixed_az" {
+#   value = {
+#     for az in module.live-fk-nat.local_vpc_public_azs : index(module.live-fk-nat.local_vpc_public_azs, az) => az
+#   }
+# }
 
 # module "fck-nat" {
 

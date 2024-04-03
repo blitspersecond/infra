@@ -31,13 +31,20 @@ data "aws_subnets" "vpc_public" {
 }
 
 data "aws_subnet" "vpc_public" {
-  count = length(data.aws_subnets.vpc_public.ids)
-  id    = data.aws_subnets.vpc_public.ids[count.index]
+  for_each = toset(data.aws_subnets.vpc_public.ids)
+  id       = each.key
 }
 
 locals {
-  vpc_public_ids = values(zipmap(data.aws_subnet.vpc_public.*.availability_zone, data.aws_subnet.vpc_public.*.id))
+  public_subnets = {
+    for az in data.aws_subnet.vpc_public : az.availability_zone => az.id
+  }
 }
+
+output "public_subnet_ids" {
+  value = local.public_subnets
+}
+
 
 data "aws_subnets" "vpc_private" {
   filter {
@@ -55,7 +62,16 @@ data "aws_subnet" "vpc_private" {
   id    = data.aws_subnets.vpc_private.ids[count.index]
 }
 
-locals {
-  vpc_private_ids = values(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
-  vpc_private_azs = keys(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
-}
+# locals {
+#   vpc_private_azs = keys(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
+#   vpc_private_ids = values(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))
+#   azs = {
+#     for az in local.vpc_public_ids : index(local.vpc_public_ids, az) => az
+#   }
+# }
+
+# output "local_fixed_az" {
+#   value = {
+#     for az in module.live-fk-nat.local_vpc_public_azs : index(module.live-fk-nat.local_vpc_public_azs, az) => az
+#   }
+# }

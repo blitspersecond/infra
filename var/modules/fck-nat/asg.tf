@@ -1,5 +1,6 @@
 resource "aws_eip" "fck_nat_eip" {
-  for_each = var.availability_zones
+  #for_each = flatten(local.vpc_public_ids)
+  for_each = local.public_subnets
   domain   = "vpc"
   tags = merge(
     var.tags,
@@ -10,35 +11,38 @@ resource "aws_eip" "fck_nat_eip" {
 }
 
 resource "aws_network_interface" "fck_nat" {
-  for_each          = var.availability_zones
-  description       = "fck-nat-lt static private ENI"
-  subnet_id         = local.vpc_private_ids[each.key]
+  for_each          = local.public_subnets
+  description       = "fck-nat-lt-${each.key} static ENI"
+  subnet_id         = each.value
   security_groups   = [aws_security_group.fck_nat_sg.id]
   source_dest_check = false
-
   tags = merge(var.tags, {
     Name = "${var.environment}-fck-nat-eni"
   })
 }
 
+output "az" {
+  value = local.public_subnets
+}
+
 resource "aws_launch_template" "fck_nat_lt" {
-  for_each      = var.availability_zones
-  name          = "fck-nat-lt-${each.value}"
+  for_each      = local.public_subnets
+  name          = "fck-nat-lt-${each.key}"
   image_id      = data.aws_ami.fck_nat.id
   instance_type = local.host-types[0]
   iam_instance_profile {
     name = aws_iam_instance_profile.fck_nat_profile.name
   }
   network_interfaces {
-    description                 = "fck-nat-lt ephemeral public ENI"
-    subnet_id                   = local.vpc_public_ids[each.key]
+    description                 = "fck-nat-lt-${each.key} ephemeral public ENI"
+    subnet_id                   = each.value
     associate_public_ip_address = true
     security_groups             = [aws_security_group.fck_nat_sg.id]
   }
   tags = merge(
     var.tags,
     {
-      Name = "${var.environment}-fck-nat"
+      Name = "${var.environment}-${each.key}-fck-nat"
     }
   )
   user_data = base64encode(templatefile("${path.module}/templates/user_data.sh", {
@@ -55,13 +59,13 @@ resource "aws_launch_template" "fck_nat_lt" {
 }
 
 resource "aws_autoscaling_group" "fck_nat_asg" {
-  for_each            = var.availability_zones
-  name                = "fck-nat-asg-${uuid()}"
+  for_each            = local.public_subnets
+  name                = "fck-nat-asg-${each.key}"
   max_size            = 1
   min_size            = 1
   desired_capacity    = 1
   health_check_type   = "EC2"
-  vpc_zone_identifier = [data.aws_subnets.vpc_public.ids[each.key]]
+  vpc_zone_identifier = [each.value]
 
   launch_template {
     id      = aws_launch_template.fck_nat_lt[each.key].id
@@ -72,7 +76,7 @@ resource "aws_autoscaling_group" "fck_nat_asg" {
     for_each = merge(
       var.tags,
       {
-        Name = "${var.environment}-${each.value}-fck-nat"
+        Name = "${var.environment}-${each.key}-fck-nat"
       }
     )
     content {
