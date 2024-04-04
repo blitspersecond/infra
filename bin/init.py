@@ -18,7 +18,7 @@ parser.add_argument("--region", help="Region Override", default=client.meta.regi
 parser.add_argument("path", help="Path Override", default=basepath)
 args = parser.parse_args()
 
-etc = "/".join([basepath, "etc"])
+config = "/".join([basepath, "config"])
 path = "/".join([basepath, args.path])
 
 
