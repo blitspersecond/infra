@@ -4,3 +4,4 @@
 .venv
 .venv/**
 .pyc
+*.py[cod]
