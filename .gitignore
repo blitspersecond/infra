@@ -1,6 +1,6 @@
 .terraform
 .terraform/**
 .terraform.lock.hcl
-venv
-venv/**
+.venv
+.venv/**
 .pyc

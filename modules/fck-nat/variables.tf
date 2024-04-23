@@ -14,3 +14,7 @@ variable "environment" {
   type    = string
   default = "undefined"
 }
+
+variable "public_subnets" {
+  type    = list(string)
+}

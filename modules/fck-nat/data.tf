@@ -19,30 +19,30 @@ data "aws_ami" "fck_nat" {
   }
 }
 
-data "aws_subnets" "vpc_public" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-  filter {
-    name   = "tag:Type"
-    values = ["public"]
-  }
-}
+# data "aws_subnets" "vpc_public" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+#   filter {
+#     name   = "tag:Type"
+#     values = ["public"]
+#   }
+# }
 
-data "aws_subnet" "vpc_public" {
-  for_each = toset(data.aws_subnets.vpc_public.ids)
-  id       = each.key
-}
+# data "aws_subnet" "vpc_public" {
+#   for_each = var.public_subnets.ids
+#   id       = each.key
+# }
 
-locals {
-  public_subnets = {
-    for az in data.aws_subnet.vpc_public : az.availability_zone => az.id
-  }
-}
+# locals {
+#   public_subnets = {
+#     for az in data.aws_subnet.vpc_public : az.availability_zone => az.id
+#   }
+# }
 
 output "public_subnet_ids" {
-  value = local.public_subnets
+  value = var.public_subnets
 }
 
 

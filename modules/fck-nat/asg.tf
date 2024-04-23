@@ -1,6 +1,6 @@
 resource "aws_eip" "fck_nat_eip" {
   #for_each = flatten(local.vpc_public_ids)
-  for_each = local.public_subnets
+  for_each = toset(var.public_subnets)
   domain   = "vpc"
   tags = merge(
     var.tags,
@@ -11,7 +11,7 @@ resource "aws_eip" "fck_nat_eip" {
 }
 
 resource "aws_network_interface" "fck_nat" {
-  for_each          = local.public_subnets
+  for_each          = toset(var.public_subnets)
   description       = "fck-nat-lt-${each.key} static ENI"
   subnet_id         = each.value
   security_groups   = [aws_security_group.fck_nat_sg.id]
@@ -21,12 +21,8 @@ resource "aws_network_interface" "fck_nat" {
   })
 }
 
-output "az" {
-  value = local.public_subnets
-}
-
 resource "aws_launch_template" "fck_nat_lt" {
-  for_each      = local.public_subnets
+  for_each      = toset(var.public_subnets)
   name          = "fck-nat-lt-${each.key}"
   image_id      = data.aws_ami.fck_nat.id
   instance_type = local.host-types[0]
@@ -59,7 +55,7 @@ resource "aws_launch_template" "fck_nat_lt" {
 }
 
 resource "aws_autoscaling_group" "fck_nat_asg" {
-  for_each            = local.public_subnets
+  for_each            = toset(var.public_subnets)
   name                = "fck-nat-asg-${each.key}"
   max_size            = 1
   min_size            = 1

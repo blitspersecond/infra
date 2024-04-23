@@ -1,3 +1,3 @@
 module "tags" {
-  source = "../../../var/modules/tags"
+  source = "../../../../modules/tags"
 }

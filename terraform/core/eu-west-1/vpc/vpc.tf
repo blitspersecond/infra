@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 module "hub-vpc" {
-  source      = "../../../var/modules/vpc"
+  source      = "../../../../modules/vpc"
   vpc_name    = "${data.aws_region.current.id}-hub-vpc"
   cidr_block  = "10.0.0.0/20"
   fck_nat     = false
@@ -20,7 +20,7 @@ module "hub-vpc" {
 }
 
 module "live-vpc" {
-  source      = "../../../var/modules/vpc"
+  source      = "../../../../modules/vpc"
   vpc_name    = "${data.aws_region.current.id}-${var.environment}-vpc"
   cidr_block  = "10.0.16.0/20"
   fck_nat     = true
@@ -38,9 +38,11 @@ module "live-vpc" {
   )
 }
 
+### this needs to be commented out on first run
 module "live-fk-nat" {
-  source = "../../../var/modules/fck-nat"
-  vpc_id = module.live-vpc.vpc_id
+  source         = "../../../../modules/fck-nat"
+  vpc_id         = module.live-vpc.vpc_id
+  public_subnets = module.live-vpc.public_subnets
   tags = merge(
     local.tags,
     {
@@ -62,16 +64,13 @@ data "aws_subnets" "vpc_public" {
   }
 }
 
-data "aws_subnet" "vpc_public" {
-  for_each = toset(data.aws_subnets.vpc_public.ids)
-  id       = each.key
-}
 
-output "subnet_ids" {
-  value = {
-    for az in data.aws_subnet.vpc_public : az.availability_zone => az.id
-  }
-}
+### VPC needs to run once with these blocks commented out
+# data "aws_subnet" "vpc_public" {
+#   for_each   = toset(data.aws_subnets.vpc_public.ids)
+#   id         = each.key
+#   depends_on = [module.live-vpc]
+# }
 
 resource "aws_vpc_peering_connection" "hub-to-eu-west-1-live" {
   peer_vpc_id = module.live-vpc.vpc_id
