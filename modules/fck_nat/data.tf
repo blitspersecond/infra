@@ -19,6 +19,18 @@ data "aws_ami" "fck_nat" {
   }
 }
 
+data "aws_subnet" "public" {
+  id = var.public_subnet_id
+}
+
+data "aws_subnet" "private" {
+  id = var.private_subnet_id
+}
+
+data "aws_route_table" "private" {
+  subnet_id = data.aws_subnet.private.id
+}
+
 # data "aws_subnets" "vpc_public" {
 #   filter {
 #     name   = "vpc-id"
@@ -41,26 +53,30 @@ data "aws_ami" "fck_nat" {
 #   }
 # }
 
-output "public_subnet_ids" {
-  value = var.public_subnets
-}
+# output "public_subnet_ids" {
+#   value = var.public_subnets
+# }
+
+# data "availability_zone" "availability_zone" {
+#   # get az from subnet
+# }
 
 
-data "aws_subnets" "vpc_private" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-  filter {
-    name   = "tag:Type"
-    values = ["private"]
-  }
-}
+# data "aws_subnets" "vpc_private" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+#   filter {
+#     name   = "tag:Type"
+#     values = ["private"]
+#   }
+# }
 
-data "aws_subnet" "vpc_private" {
-  count = length(data.aws_subnets.vpc_private.ids)
-  id    = data.aws_subnets.vpc_private.ids[count.index]
-}
+# data "aws_subnet" "vpc_private" {
+#   count = length(data.aws_subnets.vpc_private.ids)
+#   id    = data.aws_subnets.vpc_private.ids[count.index]
+# }
 
 # locals {
 #   vpc_private_azs = keys(zipmap(data.aws_subnet.vpc_private.*.availability_zone, data.aws_subnet.vpc_private.*.id))

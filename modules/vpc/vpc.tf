@@ -9,17 +9,6 @@ resource "aws_vpc" "vpc" {
   )
 }
 
-resource "aws_security_group" "fck_nat_security_group" {
-  description = "fck-nat-security-group"
-  vpc_id      = aws_vpc.vpc.id
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.vpc_name}-default-security-group"
-    }
-  )
-}
-
 resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.vpc.id
   tags = merge(
@@ -32,7 +21,7 @@ resource "aws_internet_gateway" "internet_gateway" {
 resource "aws_subnet" "public_subnet" {
   for_each                = var.availability_zones
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key)
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 5, each.key)
   availability_zone       = each.value
   map_public_ip_on_launch = false
   tags = merge(
@@ -68,7 +57,7 @@ resource "aws_route_table_association" "public_route_table_association" {
 resource "aws_subnet" "private_subnet" {
   for_each          = var.availability_zones
   vpc_id            = aws_vpc.vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key + 4)
+  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 5, each.key + 8)
   availability_zone = each.value
   tags = merge(
     var.tags,
@@ -101,7 +90,7 @@ resource "aws_route_table_association" "private_route_table_association" {
 resource "aws_subnet" "isolated_subnet" {
   for_each          = var.availability_zones
   vpc_id            = aws_vpc.vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 4, each.key + 8)
+  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 5, each.key + 16)
   availability_zone = each.value
   tags = merge(
     var.tags,
@@ -110,4 +99,14 @@ resource "aws_subnet" "isolated_subnet" {
       Type = "isolated"
     }
   )
+}
+
+module "fck_nat" {
+  for_each          = var.fck_nat ? var.availability_zones : {}
+  source            = "../fck_nat"
+  public_subnet_id  = aws_subnet.public_subnet[each.key].id
+  private_subnet_id = aws_subnet.private_subnet[each.key].id
+  environment       = var.environment
+  vpc_id            = aws_vpc.vpc.id
+  tags              = var.tags
 }

@@ -1,49 +1,45 @@
 resource "aws_eip" "fck_nat_eip" {
-  #for_each = flatten(local.vpc_public_ids)
-  for_each = toset(var.public_subnets)
-  domain   = "vpc"
+  domain = "vpc"
   tags = merge(
     var.tags,
     {
-      Name = "${var.environment}-${each.value}-fck-nat-eip"
+      Name = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-eip"
     }
   )
 }
 
 resource "aws_network_interface" "fck_nat" {
-  for_each          = toset(var.public_subnets)
-  description       = "fck-nat-lt-${each.key} static ENI"
-  subnet_id         = each.value
+  description       = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-eni"
+  subnet_id         = data.aws_subnet.public.id
   security_groups   = [aws_security_group.fck_nat_sg.id]
   source_dest_check = false
   tags = merge(var.tags, {
-    Name = "${var.environment}-fck-nat-eni"
+    Name = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-eni"
   })
 }
 
 resource "aws_launch_template" "fck_nat_lt" {
-  for_each      = toset(var.public_subnets)
-  name          = "fck-nat-lt-${each.key}"
+  name          = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-launch-template"
   image_id      = data.aws_ami.fck_nat.id
   instance_type = local.host-types[0]
   iam_instance_profile {
     name = aws_iam_instance_profile.fck_nat_profile.name
   }
   network_interfaces {
-    description                 = "fck-nat-lt-${each.key} ephemeral public ENI"
-    subnet_id                   = each.value
+    description                 = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-ephemeral-nic"
+    subnet_id                   = data.aws_subnet.public.id
     associate_public_ip_address = true
     security_groups             = [aws_security_group.fck_nat_sg.id]
   }
   tags = merge(
     var.tags,
     {
-      Name = "${var.environment}-${each.key}-fck-nat"
+      Name = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat"
     }
   )
   user_data = base64encode(templatefile("${path.module}/templates/user_data.sh", {
-    TERRAFORM_ENI_ID = aws_network_interface.fck_nat[each.key].id
-    TERRAFORM_EIP_ID = aws_eip.fck_nat_eip[each.key].allocation_id
+    TERRAFORM_ENI_ID = aws_network_interface.fck_nat.id
+    TERRAFORM_EIP_ID = aws_eip.fck_nat_eip.allocation_id
   }))
 
   # Enforce IMDSv2
@@ -55,16 +51,15 @@ resource "aws_launch_template" "fck_nat_lt" {
 }
 
 resource "aws_autoscaling_group" "fck_nat_asg" {
-  for_each            = toset(var.public_subnets)
-  name                = "fck-nat-asg-${each.key}"
+  name                = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-asg"
   max_size            = 1
   min_size            = 1
   desired_capacity    = 1
   health_check_type   = "EC2"
-  vpc_zone_identifier = [each.value]
+  vpc_zone_identifier = [data.aws_subnet.public.id]
 
   launch_template {
-    id      = aws_launch_template.fck_nat_lt[each.key].id
+    id      = aws_launch_template.fck_nat_lt.id
     version = "$Latest"
   }
 
@@ -72,7 +67,7 @@ resource "aws_autoscaling_group" "fck_nat_asg" {
     for_each = merge(
       var.tags,
       {
-        Name = "${var.environment}-${each.key}-fck-nat"
+        Name = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat"
       }
     )
     content {
@@ -85,4 +80,10 @@ resource "aws_autoscaling_group" "fck_nat_asg" {
   timeouts {
     delete = "15m"
   }
+}
+
+resource "aws_route" "fck_nat_route" {
+  route_table_id         = data.aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  network_interface_id   = aws_network_interface.fck_nat.id
 }

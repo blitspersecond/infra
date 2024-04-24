@@ -1,5 +1,5 @@
 resource "aws_iam_instance_profile" "fck_nat_profile" {
-  name = "${var.environment}-fck_nat_profile"
+  name = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck_nat_profile"
   role = aws_iam_role.fck_nat_role.name
 }
 
@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "fck_nat_network_policy" {
 }
 
 resource "aws_iam_role" "fck_nat_role" {
-  name               = "${var.environment}-fck-nat-role"
+  name               = "${var.environment}-${data.aws_subnet.public.availability_zone}-fck-nat-role"
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.fck_nat_assume_role.json
   managed_policy_arns = [
@@ -46,6 +46,8 @@ resource "aws_iam_role" "fck_nat_role" {
     policy = data.aws_iam_policy_document.fck_nat_network_policy.json
   }
 }
+
+# TODO: make the role and profile target more specific resources
 
 # resource "aws_iam_instance_profile" "main" {
 #   name = var.name
