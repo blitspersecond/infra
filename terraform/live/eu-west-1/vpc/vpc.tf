@@ -27,5 +27,6 @@ module "peering" {
       Name = "${var.environment}-vpc-peering"
     }
   )
+  depends_on = [module.vpc]
 }
 
