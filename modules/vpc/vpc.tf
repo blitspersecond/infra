@@ -36,16 +36,20 @@ resource "aws_subnet" "public_subnet" {
 resource "aws_route_table" "public_route_table" {
   for_each = var.availability_zones
   vpc_id   = aws_vpc.vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet_gateway.id
-  }
   tags = merge(
     var.tags,
     {
       Name = "${var.vpc_name}-${each.value}-public-route-table"
+      Type = "public"
     }
   )
+}
+
+resource "aws_route" "public_route" {
+  for_each               = var.availability_zones
+  route_table_id         = aws_route_table.public_route_table[each.key].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.internet_gateway.id
 }
 
 resource "aws_route_table_association" "public_route_table_association" {
@@ -75,6 +79,7 @@ resource "aws_route_table" "private_route_table" {
     var.tags,
     {
       Name = "${var.vpc_name}-${each.value}-private-route-table"
+      Type = "private"
     }
   )
 }
@@ -84,8 +89,6 @@ resource "aws_route_table_association" "private_route_table_association" {
   subnet_id      = aws_subnet.private_subnet[each.key].id
   route_table_id = aws_route_table.private_route_table[each.key].id
 }
-
-
 
 resource "aws_subnet" "isolated_subnet" {
   for_each          = var.availability_zones

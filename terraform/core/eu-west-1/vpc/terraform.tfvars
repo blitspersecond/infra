@@ -1,2 +1,2 @@
-environment = "live"
+environment = "core"
 fck_nat     = true

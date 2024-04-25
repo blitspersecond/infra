@@ -1,1 +1,0 @@
-../../../config/provider.eu-west-1.tf

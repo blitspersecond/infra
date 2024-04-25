@@ -1,8 +1,8 @@
 module "vpc" {
   source      = "../../../../modules/vpc"
   vpc_name    = "${data.aws_region.current.id}-${var.environment}-vpc"
-  cidr_block  = "10.0.0.0/19"
-  fck_nat     = false
+  cidr_block  = "10.0.32.0/19"
+  fck_nat     = true
   environment = var.environment
   availability_zones = {
     0 = "${data.aws_region.current.id}a"
@@ -16,3 +16,16 @@ module "vpc" {
     }
   )
 }
+
+module "peering" {
+  source      = "../../../../modules/peering"
+  vpc_id      = module.vpc.vpc_id
+  vpc_peer_id = data.aws_vpc.core.id
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.environment}-vpc-peering"
+    }
+  )
+}
+
