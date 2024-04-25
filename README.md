@@ -7,3 +7,12 @@ Bootstrap IAM Identity Center [clickops]
 
 Setup Baseline IAM Users, Groups & Roles
 
+Standards
+https://cloud.google.com/docs/terraform/best-practices-for-terraform
+
+Naming Standards
+service.region.environment.example.com
+
+e.g.
+live/eu-west-1/service
+live/service (global)

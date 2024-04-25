@@ -1,0 +1,7 @@
+default_region: eu-west-1
+environments:
+  - core
+  - live
+  - staging
+  - test
+  - dev
