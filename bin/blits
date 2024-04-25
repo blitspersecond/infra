@@ -112,9 +112,11 @@ class Blits:
         provider = path / "provider.tf"
         provider.symlink_to(f"../../../../config/{self._config['provider']}")
         terraform_tfvars = path / "terraform.tfvars"
-        terraform_tfvars.write_text(
-            f"environment = \"{self._config['environment']}\"\nregion = \"{self._config['region']}\"\nstack = \"{self._config['stack']}\""
-        )
+        # only write to the file if it doesn't exist
+        if not terraform_tfvars.is_file():
+            terraform_tfvars.write_text(
+                f"environment = \"{self._config['environment']}\"\nregion = \"{self._config['region']}\"\nstack = \"{self._config['stack']}\""
+            )
         # terraform -chdir=/home/kris/code/infra/terraform/core/eu-west-1/vpc init -backend-config=key=core/eu-west-1/vpc/terraform.tfstate -backend-config=bucket=terraform-state-eu-west-1-335631691830 -backend-config=region=eu-west-1
         tf_chdir = f"{path.resolve()}"
         tf_backend_config_key = f"{self._config['environment']}/{self._config['region']}/{self._config['stack']}/terraform.tfstate"

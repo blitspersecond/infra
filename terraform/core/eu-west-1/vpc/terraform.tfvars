@@ -1,2 +1,4 @@
 environment = "core"
-fck_nat     = true
+region      = "eu-west-1"
+stack       = "vpc"
+fck_nat     = false
