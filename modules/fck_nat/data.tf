@@ -19,6 +19,10 @@ data "aws_ami" "fck_nat" {
   }
 }
 
+data "aws_vpc" "main" {
+  id = var.vpc_id
+}
+
 data "aws_subnet" "public" {
   id = var.public_subnet_id
 }
