@@ -112,4 +112,5 @@ module "fck_nat" {
   environment       = var.environment
   vpc_id            = aws_vpc.vpc.id
   tags              = var.tags
+  depends_on        = [aws_route_table.private_route_table]
 }

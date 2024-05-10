@@ -1,2 +1,4 @@
 environment = "live"
-domain = "blitspersecond.com"
+domain      = "blitspersecond.com"
+stack       = "route53"
+region      = "eu-west-1"

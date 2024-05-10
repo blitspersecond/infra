@@ -16,17 +16,3 @@ module "vpc" {
     }
   )
 }
-
-module "peering" {
-  source      = "../../../../modules/peering"
-  vpc_id      = module.vpc.vpc_id
-  vpc_peer_id = data.aws_vpc.core.id
-  tags = merge(
-    local.tags,
-    {
-      Name = "${var.environment}-vpc-peering"
-    }
-  )
-  depends_on = [module.vpc]
-}
-

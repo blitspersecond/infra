@@ -6,3 +6,4 @@ locals {
     (module.tags.ENVIRONMENT) = var.environment
   }
 }
+

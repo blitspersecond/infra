@@ -6,3 +6,9 @@ data "aws_vpc" "core" {
     values = ["core"]
   }
 }
+data "aws_vpc" "local" {
+  filter {
+    name   = "tag:Environment"
+    values = [var.environment]
+  }
+}
