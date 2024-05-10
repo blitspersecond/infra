@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+
+import argparse
+from pathlib import Path
+import botocore, boto3
+import yaml
+import subprocess
+
+
+class Blits:
+    _config = None
+
+    def __init__(self):
+        self._config = {
+            "base": None,
+            "terraform": None,
+            "environment": None,
+            "region": None,
+            "stack": None,
+        }
+        self._aws_regions = None
+
+    def _get_aws_account_id(self):
+        sts = boto3.client("sts")
+        try:
+            return sts.get_caller_identity()["Account"]
+        except botocore.exceptions.UnauthorizedSSOTokenError as e:
+            raise ValueError("Unable to get AWS account ID - are you logged in?")
+
+    def _get_aws_regions(self):
+        if self._aws_regions == None:
+            self._aws_regions = []
+            self._aws_regions.append("global")
+            ec2 = boto3.client("ec2")
+            for region in ec2.describe_regions()["Regions"]:
+                self._aws_regions.append(region["RegionName"])
+        return self._aws_regions
+
+    def _config_builder(self, path: Path):
+        if not path.is_dir():
+            raise FileNotFoundError(f"{path} is not a directory")
+        try:
+            self._config["account_id"] = self._get_aws_account_id()
+            self._config["stack"] = path.resolve().name
+            self._config["region"] = path.resolve().parent.name
+            self._config["environment"] = path.resolve().parent.parent.name
+            self._config["terraform"] = path.resolve().parent.parent.parent.name
+            self._config["base"] = path.resolve().parent.parent.parent.parent
+
+            # validate its a terraform directory
+            if self._config["terraform"] != "terraform":
+                raise ValueError(
+                    f"Invalid path {path} - expected to match: terraform/environment/region/stack"
+                )
+
+            # validate the config directory exists in the base
+            if not (self._config["base"] / "config").is_dir():
+                raise FileNotFoundError(
+                    f"Config directory not found in {self._config['base']}"
+                )
+
+            # validate the provider file exists in the config directory
+            default_provider = self._config["base"] / "config" / "provider.tf"
+            region_provider = (
+                self._config["base"]
+                / "config"
+                / f"provider.{self._config['region']}.tf"
+            )
+            print(region_provider)
+            if not default_provider.is_file() and not region_provider.is_file():
+                raise FileNotFoundError(
+                    f"Provider file not found in {self._config['base'] / 'config'}"
+                )
+            else:
+                self._config["provider"] = (
+                    region_provider.name
+                    if region_provider.is_file()
+                    else default_provider.name
+                )
+            if not self._config["base"] / "config" / "config.yaml":
+                raise FileNotFoundError(
+                    f"Config file not found in {self._config['base'] / 'config'}"
+                )
+
+            # load the config file
+            config_file = self._config["base"] / "config" / "config.yaml"
+            with open(config_file, "r") as f:
+                self._config["config"] = yaml.safe_load(f)
+
+            # validate the environment
+            if (
+                self._config["environment"]
+                not in self._config["config"]["environments"]
+            ):
+                raise ValueError(
+                    f"Invalid environment {self._config['environment']} - must be one of {self._config['config']['environments']}"
+                )
+
+            # check the region is valid
+            if self._config["region"] not in self._get_aws_regions():
+                raise ValueError(
+                    f"Invalid region {self._config['region']} - must be one of {self._get_aws_regions()}"
+                )
+
+        except IndexError as e:
+            raise ValueError(
+                f"Invalid path {path} - expected to match: terraform/environment/region/stack"
+            )
+        return True
+
+    def skeleton(self, path: Path):
+        provider = path / "provider.tf"
+        provider.symlink_to(f"../../../../config/{self._config['provider']}")
+        terraform_tfvars = path / "terraform.tfvars"
+        # only write to the file if it doesn't exist
+        if not terraform_tfvars.is_file():
+            terraform_tfvars.write_text(
+                f"environment = \"{self._config['environment']}\"\nregion = \"{self._config['region']}\"\nstack = \"{self._config['stack']}\""
+            )
+        # terraform -chdir=/home/kris/code/infra/terraform/core/eu-west-1/vpc init -backend-config=key=core/eu-west-1/vpc/terraform.tfstate -backend-config=bucket=terraform-state-eu-west-1-335631691830 -backend-config=region=eu-west-1
+        tf_chdir = f"{path.resolve()}"
+        tf_backend_config_key = f"{self._config['environment']}/{self._config['region']}/{self._config['stack']}/terraform.tfstate"
+        tf_backend_config_bucket = (
+            f"terraform-state-{self._config['region']}-{self._config['account_id']}"
+        )
+        tf_backend_config_region = f"{self._config['region']}"
+        subprocess.run(
+            [
+                "terraform",
+                f"-chdir={tf_chdir}/",
+                "init",
+                f"-backend-config=key={tf_backend_config_key}",
+                f"-backend-config=bucket={tf_backend_config_bucket}",
+                f"-backend-config=region={tf_backend_config_region}",
+            ],
+        )
+        return True
+
+    def parse(self):
+        parser = argparse.ArgumentParser(
+            description="Blits - A simple tool for managing terraform projects"
+        )
+        parser.add_argument(
+            "command",
+            help="The command to run",
+            choices=["skeleton"],
+            default="skeleton",
+        )
+        parser.add_argument("path", help="The path to the stack", nargs="?")
+        args = parser.parse_args()
+        self._config_builder(Path(args.path))
+        if args.command == "skeleton":
+            self.skeleton(Path(args.path))
+        else:
+            print("Unknown command")
+
+
+if __name__ == "__main__":
+    cli = Blits()
+    cli.parse()
