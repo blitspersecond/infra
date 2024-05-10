@@ -75,3 +75,4 @@ resource "aws_autoscaling_group" "ecs_cluster_nodes" {
     propagate_at_launch = true
   }
 }
+
