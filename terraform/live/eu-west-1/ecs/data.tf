@@ -26,6 +26,17 @@ data "aws_subnets" "private" {
   }
 }
 
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.local.id]
+  }
+  filter {
+    name   = "tag:Type"
+    values = ["public"]
+  }
+}
+
 data "aws_ami" "ecs" {
   most_recent = true
   owners      = ["amazon"]
@@ -33,4 +44,8 @@ data "aws_ami" "ecs" {
     name   = "name"
     values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
   }
+}
+
+data "aws_route53_zone" "primary" {
+  name = "${var.region}.${var.environment}.${var.domain}"
 }

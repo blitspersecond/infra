@@ -1,7 +1,7 @@
 resource "aws_security_group" "cluster_origin_alb_sg" {
   name        = "${var.environment}-origin-alb-sg"
   description = "Allow HTTP and HTTPS traffic"
-  vpc_id      = data.aws_vpc.spoke.id
+  vpc_id      = data.aws_vpc.local.id
   ingress {
     from_port   = 80
     to_port     = 80
@@ -29,7 +29,7 @@ resource "aws_alb" "cluster_origin_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.cluster_origin_alb_sg.id]
-  subnets            = data.aws_subnets.spoke_public.ids
+  subnets            = data.aws_subnets.public.ids
   tags = merge(
     local.tags,
     {
@@ -52,18 +52,15 @@ resource "aws_alb_listener" "cluster_origin_alb_http" {
   }
 }
 
-
-
 variable "domain" {
   type        = string
   default     = ""
   description = "domain name"
 }
 
-
 resource "aws_route53_record" "cluster_origin_alb" {
   zone_id = data.aws_route53_zone.primary.zone_id
-  name    = "origin.${var.environment}.${data.aws_region.current.name}.${var.domain}"
+  name    = "origin.${var.region}.${var.environment}.${var.domain}"
   type    = "A"
   alias {
     name                   = aws_alb.cluster_origin_alb.dns_name
@@ -73,7 +70,7 @@ resource "aws_route53_record" "cluster_origin_alb" {
 }
 
 resource "aws_acm_certificate" "cert" {
-  domain_name       = "origin.${var.environment}.${data.aws_region.current.name}.${var.domain}"
+  domain_name       = "origin.${var.region}.${var.environment}.${var.domain}"
   validation_method = "DNS"
   tags = merge(
     local.tags,
@@ -84,6 +81,7 @@ resource "aws_acm_certificate" "cert" {
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = [aws_route53_record.cluster_origin_alb]
 }
 
 resource "aws_acm_certificate_validation" "cert_validation" {

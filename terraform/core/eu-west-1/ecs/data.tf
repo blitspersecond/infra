@@ -45,3 +45,6 @@ data "aws_subnets" "spoke_private" {
     values = ["private"]
   }
 }
+data "aws_route53_zone" "primary" {
+  name = "${var.region}.${var.environment}.${var.domain}"
+}

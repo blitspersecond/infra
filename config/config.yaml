@@ -5,3 +5,4 @@ environments:
   - staging
   - test
   - dev
+domain: blitspersecond.com

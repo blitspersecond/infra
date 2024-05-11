@@ -17,3 +17,8 @@ variable "region" {
   type    = string
   default = "undefined"
 }
+
+variable "domain" {
+  type    = string
+  default = "undefined"
+}
