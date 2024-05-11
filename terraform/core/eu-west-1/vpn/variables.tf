@@ -3,6 +3,11 @@ variable "environment" {
   default = "undefined"
 }
 
+variable "domain" {
+  type    = string
+  default = "undefined"
+}
+
 variable "region" {
   type    = string
   default = "undefined"
@@ -13,12 +18,3 @@ variable "stack" {
   default = "undefined"
 }
 
-variable "fck_nat" {
-  type    = bool
-  default = false
-}
-
-variable "domain" {
-  type    = string
-  default = "undefined"
-}

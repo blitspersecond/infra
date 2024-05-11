@@ -19,3 +19,8 @@ variable "domain" {
   type    = string
   default = "undefined"
 }
+
+variable "cloudflare_root" {
+  type    = bool
+  default = false
+}

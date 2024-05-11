@@ -1,5 +1,4 @@
 environment = "core"
 region      = "eu-west-1"
-stack       = "vpc"
-fck_nat     = false
+stack       = "vpn"
 domain      = "blitspersecond.com"

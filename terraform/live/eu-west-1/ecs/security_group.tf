@@ -11,6 +11,14 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = [data.aws_vpc.core.cidr_block]
   }
 
+  ingress {
+    description = "Ping access from Core"
+    from_port   = 8
+    to_port     = 0
+    protocol    = "icmp"
+    cidr_blocks = [data.aws_vpc.core.cidr_block]
+  }
+
   egress {
     description = "All traffic to the internet"
     from_port   = 0

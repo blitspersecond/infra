@@ -16,10 +16,7 @@ resource "aws_launch_template" "ecs_cluster_nodes" {
     http_endpoint = "enabled"
     http_tokens   = "required"
   }
-  #   network_interfaces {
-  #     associate_public_ip_address = true
-  #     security_groups             = [aws_security_group.ecs.id]
-  #   }
+
   lifecycle {
     create_before_destroy = true
   }
