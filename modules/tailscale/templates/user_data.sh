@@ -11,5 +11,4 @@ echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
 echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
 sysctl -p /etc/sysctl.d/99-tailscale.conf
 systemctl enable --now tailscaled
-# TODO: dont hardcode the authkey
-tailscale up --advertise-routes=10.0.0.0/19,10.0.32.0/19 --accept-routes --advertise-tags=tag:aws --authkey=$TAILSCALE_AUTHKEY
+tailscale up --advertise-routes=${TF_CIDR_BLOCKS} --accept-routes --advertise-tags=tag:aws --authkey=$TAILSCALE_AUTHKEY

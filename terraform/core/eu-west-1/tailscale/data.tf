@@ -8,6 +8,14 @@ data "aws_vpc" "core" {
   }
 }
 
+data "aws_vpc" "live" {
+  filter {
+    name   = "tag:Environment"
+    values = ["live"]
+  }
+}
+
+
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Environment"
@@ -26,32 +34,10 @@ data "aws_subnets" "public" {
   }
 }
 
-data "aws_ami" "al2023" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "name"
-    values = ["al2023-ami-2023.*-arm64"]
-  }
-  filter {
-    name   = "architecture"
-    values = ["arm64"]
-  }
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-}
-
 data "aws_route53_zone" "primary" {
   name = "${var.region}.${var.environment}.${var.domain}"
 }
 
-data "aws_ssm_parameter" "tailscale_auth_key" {
+data "aws_ssm_parameter" "auth_key" {
   name = "/tailscale/key"
 }

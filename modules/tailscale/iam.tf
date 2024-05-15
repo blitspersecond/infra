@@ -1,9 +1,9 @@
-resource "aws_iam_instance_profile" "vpn_profile" {
-  name = "vpn_profile"
-  role = aws_iam_role.vpn_role.name
+resource "aws_iam_instance_profile" "tailscale_profile" {
+  name = "${var.environment}-${var.region}-tailscale-profile"
+  role = aws_iam_role.tailscale_role.name
 }
 
-data "aws_iam_policy_document" "vpn_assume_role" {
+data "aws_iam_policy_document" "tailscale_assume_role" {
   statement {
     effect = "Allow"
 
@@ -16,21 +16,21 @@ data "aws_iam_policy_document" "vpn_assume_role" {
   }
 }
 
-resource "aws_iam_role" "vpn_role" {
-  name               = "vpn_role"
+resource "aws_iam_role" "tailscale_role" {
+  name               = "${var.environment}-${var.region}-tailscale-role"
   path               = "/"
-  assume_role_policy = data.aws_iam_policy_document.vpn_assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.tailscale_assume_role.json
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   ]
   inline_policy {
-    name   = "fck_nat_network_policy"
-    policy = data.aws_iam_policy_document.vpn_network_policy.json
+    name   = "tailscale_policy"
+    policy = data.aws_iam_policy_document.tailscale_policy.json
   }
 }
 
 # trivy:ignore:avd-aws-0057 a condition is used to restrict the actions to a specific resource
-data "aws_iam_policy_document" "vpn_network_policy" {
+data "aws_iam_policy_document" "tailscale_policy" {
   statement {
     effect = "Allow"
     actions = [
@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "vpn_network_policy" {
     condition {
       test     = "StringEquals"
       variable = "ec2:ResourceTag/Name"
-      values   = ["${var.environment}-vpn"]
+      values   = ["${var.environment}-${var.region}-tailscale"]
     }
   }
   statement {
@@ -51,6 +51,6 @@ data "aws_iam_policy_document" "vpn_network_policy" {
       "ssm:GetParametersByPath",
       "ssm:DescribeParameters",
     ]
-    resources = [data.aws_ssm_parameter.tailscale_auth_key.arn]
+    resources = [var.auth_key]
   }
 }
