@@ -1,7 +1,7 @@
 locals {
   host-types = [
-    "t3.micro", # $0.0104 per hour
-    "t2.micro", # $0.0136 per hour
+    "t3.micro",  # $0.0104 per hour
+    "t3a.micro", # $0.0096 per hour
   ]
 }
 
